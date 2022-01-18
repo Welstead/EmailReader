@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MailKit.Net.Imap;
+using MimeKit;
 
 namespace EmailReader
 {
@@ -13,7 +15,7 @@ namespace EmailReader
         public string Subject { get; set; }
         public string Content { get; set; }
 
-        public List<AE.Net.Mail.Attachment> Files { get; set; }
+        public List<MimeEntity> Files { get; set; }
 
     }
 }

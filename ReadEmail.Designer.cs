@@ -109,11 +109,11 @@
             // 
             // btnOpenFile
             // 
-            this.btnOpenFile.Location = new System.Drawing.Point(616, 306);
+            this.btnOpenFile.Location = new System.Drawing.Point(627, 307);
             this.btnOpenFile.Name = "btnOpenFile";
             this.btnOpenFile.Size = new System.Drawing.Size(75, 23);
             this.btnOpenFile.TabIndex = 8;
-            this.btnOpenFile.Text = "Open File";
+            this.btnOpenFile.Text = "Save File";
             this.btnOpenFile.UseVisualStyleBackColor = true;
             this.btnOpenFile.Click += new System.EventHandler(this.btnOpenFile_Click);
             // 

@@ -1,29 +1,21 @@
-﻿using AE.Net.Mail;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using MailKit.Net.Imap;
+using MimeKit;
 using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace EmailReader
 {
-    
+
     public partial class ReadEmail : Form
     {
         
         public static string YourEmail = "louis.welstead@gmail.com";
         public static string YourPassword = "";
-        public static ImapClient IC;
         public int selectedEmail;
         List<EmailModel> emails = new List<EmailModel>();
         List<string> Attachments = new List<string>();
         public string filename;
+        
 
 
         public ReadEmail()
@@ -44,18 +36,24 @@ namespace EmailReader
 
         private void btnLoadInbox_Click(object sender, EventArgs e)
         {
-            IC = new ImapClient("imap.gmail.com", YourEmail, YourPassword, AuthMethods.Login, 993, true);
             
-            for (int i = 1; i < 10; i++)
+            using (ImapClient IC =new ImapClient())
             {
-                var email = IC.GetMessage(IC.GetMessageCount() - i);
-                emails.Add(new EmailModel { EmailID = i, Sender = email.From.ToString(), Subject = email.Subject.ToString(), Content = email.Body , Files = email.Attachments.ToList()});
-                //TODO: Filter out emails that don't have attachments
-                
-                
+                IC.Connect("imap.gmail.com", 993, true);
+                IC.Authenticate(YourEmail, YourPassword);
+                var folder = IC.GetFolder("Inbox");
+                folder.Open(MailKit.FolderAccess.ReadOnly);
+                int count = folder.Count;
+                for (int i = 1; i < 20; i++)
+                {
+                    var email = folder.GetMessage(count - i);
+                    if (email.Attachments.FirstOrDefault() != null)
+                    {
+                        emails.Add(new EmailModel { EmailID = i, Sender = email.From.ToString(), Subject = email.Subject.ToString(), Content = email.Body.ToString(), Files = email.Attachments.ToList() });
+                    }
+                }
 
             }
-            
             listEmails.DataSource = emails.Select(e => e.Subject).ToList();
         }
 
@@ -79,19 +77,21 @@ namespace EmailReader
 
         public void ShowAttachments()
         {
-            
+            var test = emails[selectedEmail].Files;
             try
             {
-                if(emails[selectedEmail].Files[0] != null)
+                if(test != null)
                 {
-                    Attachments.Add(emails[selectedEmail].Files[0].Filename);
-                    filename = emails[selectedEmail].Files[0].Filename;
+                    foreach(var file in test)
+                    {
+                        Attachments.Add(file.ContentType.Name);
+                    }
                 }
                 
             }
             catch(Exception ex)
             {
-                
+                //
             }
             
             listAttachments.DataSource = null;
@@ -100,19 +100,36 @@ namespace EmailReader
 
         private void btnOpenFile_Click(object sender, EventArgs e)
         {
+            var test = emails[selectedEmail].Files.FirstOrDefault();
+            var files = emails[selectedEmail].Files;
+            foreach (var file in files)
+            {
+                if(file.ContentType.Name == listAttachments.SelectedItem)
+                {
+                    test = file;
+                }
+            }
             
-            var test = emails[selectedEmail].Files[0];
-            var test2 = test.GetData();
-            //SaveFileDialog sfd = new SaveFileDialog();
-            //sfd.ShowDialog();
+            try
+            {
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.FileName = test.ContentType.Name;
+                if(sfd.ShowDialog() == DialogResult.OK)
+                {
+                    using (var stream = File.Create(sfd.FileName))
+                    {
 
-            File.WriteAllBytes(Path.Join(Directory.GetCurrentDirectory(), test.Filename), test2);
+                        ((MimePart)test).Content.DecodeTo(stream);
+                    }
+                    MessageBox.Show($"{sfd.FileName} successfully downloaded!");
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
             
-            
-            
-            //PdfDocument pdfDocument = PdfReader.Open(test);
-            //pdfDocument.Save(test);
-
         }
     }
 }
